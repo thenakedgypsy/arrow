@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
@@ -22,6 +23,7 @@ public class Game1 : Game
     private Vector2 _mousePosition;
     public GameTime gameTime;
     private List<Bullet> _bullets = new List<Bullet>();
+    private List<Rock> _rocks = new List<Rock>();
 
     public Game1()
     {
@@ -58,9 +60,12 @@ public class Game1 : Game
         _bulletTexture = Content.Load<Texture2D>("bull");
         _lastShoot = 0f;
 
+
+        //rock
         Texture2D rTexture = Content.Load<Texture2D>("largeRock");
         rock = new Rock(player.Position, "large", rTexture);
         rock.Origin = new Vector2(rock.Texture.Width / 2f, rock.Texture.Height / 2f);
+        _rocks.Add(rock);
     
     }
 
@@ -76,7 +81,9 @@ public class Game1 : Game
         UpdateMovement();
         UpdateShoot(gameTime);
         UpdateBullets();
+        UpdateRocks();
         rock.Rotate(0.5f);
+        
 
         base.Update(gameTime);
     }
@@ -171,6 +178,17 @@ public class Game1 : Game
         } 
     }
 
+    private void UpdateRocks()
+    {
+        List<Rock> rocksCopy = _rocks.ToList();
+        foreach(Rock rock in rocksCopy)
+        {
+            
+            Vector2 nDirection = Vector2.Normalize(rock.Direction);
+            rock.Position = rock.Position - nDirection * rock.Speed;
+        }
+    }
+
     protected override void Draw(GameTime gameTime)
     {
         GraphicsDevice.Clear(Color.Black);
@@ -187,7 +205,7 @@ public class Game1 : Game
             _spriteBatch.Draw(_bulletTexture, bullet.Location, Color.White);
         }
 
-        _spriteBatch.Draw(rock.Texture,rock.Location,null, Color.White,
+        _spriteBatch.Draw(rock.Texture,rock.Position, null, Color.White,
                             rock.Rotation,rock.Origin,
                             1.0f,SpriteEffects.None,0f);
 
