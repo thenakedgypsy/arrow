@@ -22,10 +22,10 @@ public class Game1 : Game
     private float _lastShoot;
     private Player player;
     private Vector2 _mousePosition;
-    public GameTime gameTime;
+    private CollisionManager _collisionManager;
     private List<Bullet> _bullets = new List<Bullet>();
     private List<Rock> _rocks = new List<Rock>();
-
+    public GameTime gameTime;
     
 
     public Game1()
@@ -41,6 +41,7 @@ public class Game1 : Game
         _graphics.PreferredBackBufferWidth = 1920;
         _graphics.PreferredBackBufferHeight = 1080;
         _graphics.ApplyChanges();
+        _collisionManager = new CollisionManager();
         _bulletSpeed = 8.0f;
         _shootCD = 0.2f; //in seconds
         _rockCD = 45f;
@@ -63,6 +64,8 @@ public class Game1 : Game
 
         _bulletTexture = Content.Load<Texture2D>("bull");
         _lastShoot = 0f;
+       
+        
 
 
         //rock
@@ -90,17 +93,8 @@ public class Game1 : Game
         UpdateShoot(gameTime);
         UpdateBullets();
         UpdateRocks();
-        for(int i = 0; i <= _rocks.Count - 1;i++)
-        {
-            if(i%2 == 0)
-            {
-                _rocks[i].Rotate(0.5f);
-            }
-            else
-            {
-                _rocks[i].Rotate(-0.5f);
-            }
-        }
+
+        BulletCheck();
 
         base.Update(gameTime);
     }
@@ -168,8 +162,28 @@ public class Game1 : Game
             _bullets.Add(bullet);
             _lastShoot = currentTime;
             }
+        }        
+    }
+
+    private void BulletCheck()
+    {
+        List<Bullet> bulletsCopy = _bullets.ToList();
+        List<Rock> rocksCopy = _rocks.ToList();
+        foreach(Bullet bullet in bulletsCopy)
+        {
+            foreach(Rock rock in rocksCopy)
+            {   
+                Console.WriteLine(_collisionManager.CollideCheck(_bulletTexture,bullet.Location,rock.Texture,rock.Position));
+                
+                if(_collisionManager.CollideCheck(_bulletTexture,bullet.Location,rock.Texture,rock.Position))
+                {
+                    _rocks.Remove(rock);
+                    _bullets.Remove(bullet);
+                }
+            }
         }
     }
+
 
     private void UpdateMouse()
     {
@@ -204,11 +218,22 @@ public class Game1 : Game
             Vector2 nDirection = Vector2.Normalize(rock.Direction);
             rock.Position = rock.Position - nDirection * rock.Speed;
         }
+        for(int i = 0; i <= _rocks.Count - 1;i++)
+        {
+            if(i%2 == 0)
+            {
+                _rocks[i].Rotate(0.5f);
+            }
+            else
+            {
+                _rocks[i].Rotate(-0.5f);
+            }
+        }
     }
 
     private void UpdateWave()
     {
-        
+
     }
 
     protected override void Draw(GameTime gameTime)
