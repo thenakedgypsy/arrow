@@ -6,7 +6,6 @@ using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 
-
 namespace mono;
 
 public class Game1 : Game
@@ -19,6 +18,7 @@ public class Game1 : Game
     private float _shootCD;
     private float _lastShoot;
     private Player player;
+    private Rock rock;
     private Vector2 _mousePosition;
     public GameTime gameTime;
     private List<Bullet> _bullets = new List<Bullet>();
@@ -37,7 +37,7 @@ public class Game1 : Game
         _graphics.PreferredBackBufferHeight = 1080;
         _graphics.ApplyChanges();
         _bulletSpeed = 8.0f;
-        _shootCD = 0.5f; //in seconds
+        _shootCD = 0.2f; //in seconds
 
         base.Initialize();
 
@@ -48,13 +48,19 @@ public class Game1 : Game
         //initialise some other bits
         _mouseState = Mouse.GetState();
         _mousePosition = new Vector2(_mouseState.X,_mouseState.Y);
+
         _spriteBatch = new SpriteBatch(GraphicsDevice);
-        
-        Texture2D texture = Content.Load<Texture2D>("tri");
-        player = new Player(texture);
+
+        Texture2D pTexture = Content.Load<Texture2D>("tri");
+        player = new Player(pTexture);
+        player.Origin = new Vector2(player.Texture.Width / 1.5f, player.Texture.Height / 2f);
+
         _bulletTexture = Content.Load<Texture2D>("bull");
-        player.Origin = new Vector2(player.Texture.Width / 2f, player.Texture.Height / 2f);
         _lastShoot = 0f;
+
+        Texture2D rTexture = Content.Load<Texture2D>("largeRock");
+        rock = new Rock(player.Position, "large", rTexture);
+        rock.Origin = new Vector2(rock.Texture.Width / 2f, rock.Texture.Height / 2f);
     
     }
 
@@ -65,12 +71,12 @@ public class Game1 : Game
             Exit();
         }
         
-        
         UpdateMouse();
         player.UpdateRotation(_mousePosition);
         UpdateMovement();
         UpdateShoot(gameTime);
         UpdateBullets();
+        rock.Rotate(0.5f);
 
         base.Update(gameTime);
     }
@@ -100,7 +106,7 @@ public class Game1 : Game
             player.Position = player.Position - nDirection * (player.Speed / 1.5f);
             }
             else{
-            player.Position = player.Position - nDirection * (player.Speed - 0.5f);
+            player.Position = player.Position - nDirection * player.Speed;
             }
         }        
         if(keyState.IsKeyDown(Keys.D))
@@ -126,8 +132,6 @@ public class Game1 : Game
             }
         }
     }
-
-
 
     private void UpdateShoot(GameTime gameTime)
     {
@@ -174,14 +178,18 @@ public class Game1 : Game
         _spriteBatch.Begin();
 
         _spriteBatch.Draw(player.Texture,
-            player.Position, null, Color.White, 
-            player.Rotation, player.Origin, 1.0f, 
-            SpriteEffects.None, 0f);
+                        player.Position, null, Color.White, 
+                        player.Rotation, player.Origin, 1.0f, 
+                        SpriteEffects.None, 0f);
 
         foreach(Bullet bullet in _bullets)
         {
             _spriteBatch.Draw(_bulletTexture, bullet.Location, Color.White);
         }
+
+        _spriteBatch.Draw(rock.Texture,rock.Location,null, Color.White,
+                            rock.Rotation,rock.Origin,
+                            1.0f,SpriteEffects.None,0f);
 
         _spriteBatch.End();
 
