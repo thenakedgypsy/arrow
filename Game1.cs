@@ -69,21 +69,49 @@ public class Game1 : Game
         Vector2 strafeDirection = new Vector2((float)Math.Cos(_playerRotation + MathHelper.PiOver2), //x
                                             (float)Math.Sin(_playerRotation + MathHelper.PiOver2)); //y
         Vector2 nStrafeDirection = Vector2.Normalize(strafeDirection);
-        if (Keyboard.GetState().IsKeyDown(Keys.W))
+        
+        KeyboardState keyState = Keyboard.GetState();
+        if(keyState.IsKeyDown(Keys.W))
         {
-            _playerPosition = _playerPosition + nDirection * _playerSpeed;
+            if(keyState.IsKeyDown(Keys.D) || keyState.IsKeyDown(Keys.A))
+            {
+            _playerPosition = _playerPosition + nDirection * (_playerSpeed / 1.5f);
+            }
+            else{
+            _playerPosition = _playerPosition + nDirection * (_playerSpeed + 0.5f);
+            }
         }
-        if(Keyboard.GetState().IsKeyDown(Keys.S))
+        if(keyState.IsKeyDown(Keys.S))
         {
-            _playerPosition = _playerPosition - nDirection * _playerSpeed;
+            if(keyState.IsKeyDown(Keys.D) || keyState.IsKeyDown(Keys.A))
+            {
+            _playerPosition = _playerPosition - nDirection * (_playerSpeed / 1.5f);
+            }
+            else{
+            _playerPosition = _playerPosition - nDirection * (_playerSpeed - 0.5f);
+            }
+        }        
+        if(keyState.IsKeyDown(Keys.D))
+        {
+            if (keyState.IsKeyDown(Keys.W) || keyState.IsKeyDown(Keys.S))
+            {
+                _playerPosition = _playerPosition + nStrafeDirection * (_playerSpeed / 1.5f);
+            }
+            else
+            {
+                _playerPosition = _playerPosition + nStrafeDirection * _playerSpeed;
+            }
         }
-        if(Keyboard.GetState().IsKeyDown(Keys.D))
+        if(keyState.IsKeyDown(Keys.A))
         {
-            _playerPosition = _playerPosition + nStrafeDirection * _playerSpeed;
-        }
-        if(Keyboard.GetState().IsKeyDown(Keys.A))
-        {
-            _playerPosition = _playerPosition - nStrafeDirection * _playerSpeed;
+            if (keyState.IsKeyDown(Keys.W) || keyState.IsKeyDown(Keys.S))
+            {
+                _playerPosition = _playerPosition - nStrafeDirection * (_playerSpeed / 1.5f);
+            }
+            else
+            {
+                _playerPosition = _playerPosition - nStrafeDirection * _playerSpeed;
+            }
         }
     }
 
