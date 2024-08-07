@@ -2,6 +2,8 @@
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
+using System;
+
 
 namespace mono;
 
@@ -9,15 +11,15 @@ public class Game1 : Game
 {
     private GraphicsDeviceManager _graphics;
     private SpriteBatch _spriteBatch;
+    private MouseState _mouseState;
+    private Texture2D _playerTexture;
+    private float _playerRotation;
+    private Vector2 _playerMoveDirection;
+    private float _playerSpeed;
+    private Vector2 _playerOrigin;
+    private Vector2 _playerPosition;
+    private Vector2 _mousePosition;
 
-    private Texture2D _upTexture;
-    private Texture2D _rightTexture;
-    private Texture2D _downTexture;
-    private Texture2D _leftTexture;
-    private Texture2D _currentTexture;
-    private Vector2 _position;
-    private Rectangle rect;
-    private float _rotation = 0;
 
     public Game1()
     {
@@ -31,17 +33,17 @@ public class Game1 : Game
         // TODO: Add your initialization logic here
 
         base.Initialize();
+        _playerSpeed = 2.0f;
     }
 
     protected override void LoadContent()
     {
+        _mouseState = Mouse.GetState();
+        _mousePosition = new Vector2(_mouseState.X,_mouseState.Y);
         _spriteBatch = new SpriteBatch(GraphicsDevice);
-        _upTexture = Content.Load<Texture2D>("man");
-        _rightTexture = Content.Load<Texture2D>("manRight");
-        _leftTexture = Content.Load<Texture2D>("manLeft");
-        _downTexture = Content.Load<Texture2D>("manDown");
-        _position = new Vector2(100,100);
-        _currentTexture = _upTexture;
+        _playerTexture = Content.Load<Texture2D>("tri");
+        _playerPosition = new Vector2(100,100);
+        _playerOrigin = new Vector2(_playerTexture.Width / 2f, _playerTexture.Height / 2f);
 
         // TODO: use this.Content to load your game content here
     }
@@ -52,49 +54,63 @@ public class Game1 : Game
         {
             Exit();
         }
-
+        
+        
+        UpdateMouse();
+        UpdateRotation();
         UpdateMovement();
-
-           // TODO: Add your update logic here
 
         base.Update(gameTime);
     }
 
     private void UpdateMovement()
     {
-        if (Keyboard.GetState().IsKeyDown(Keys.D))
-        {   
-            _position.X += 2; 
-            _currentTexture = _rightTexture;
-        }
+        Vector2 nDirection = Vector2.Normalize(_playerMoveDirection);
+        Vector2 strafeDirection = new Vector2((float)Math.Cos(_playerRotation + MathHelper.PiOver2), //x
+                                            (float)Math.Sin(_playerRotation + MathHelper.PiOver2)); //y
+        Vector2 nStrafeDirection = Vector2.Normalize(strafeDirection);
         if (Keyboard.GetState().IsKeyDown(Keys.W))
         {
-            _position.Y -= 2;
-            _currentTexture = _upTexture;
+            _playerPosition = _playerPosition + nDirection * _playerSpeed;
         }
-
-        if (Keyboard.GetState().IsKeyDown(Keys.A))
-        {   
-            _position.X -= 2; 
-            _currentTexture = _leftTexture;
-        }
-        if (Keyboard.GetState().IsKeyDown(Keys.S))
+        if(Keyboard.GetState().IsKeyDown(Keys.S))
         {
-            _position.Y += 2;
-            _currentTexture = _downTexture;
+            _playerPosition = _playerPosition - nDirection * _playerSpeed;
         }
+        if(Keyboard.GetState().IsKeyDown(Keys.D))
+        {
+            _playerPosition = _playerPosition + nStrafeDirection * _playerSpeed;
+        }
+        if(Keyboard.GetState().IsKeyDown(Keys.A))
+        {
+            _playerPosition = _playerPosition - nStrafeDirection * _playerSpeed;
+        }
+    }
+
+    private void UpdateRotation()
+    {
+        _playerMoveDirection = _mousePosition - _playerPosition;
+        _playerRotation = (float)Math.Atan2(_playerMoveDirection.Y, _playerMoveDirection.X);
+    }
+
+    public void UpdateMouse()
+    {
+        _mouseState = Mouse.GetState();
+        _mousePosition = new Vector2(_mouseState.X,_mouseState.Y);
     }
 
     protected override void Draw(GameTime gameTime)
     {
-        GraphicsDevice.Clear(Color.CornflowerBlue);
+        GraphicsDevice.Clear(Color.Black);
 
         _spriteBatch.Begin();
 
-        _spriteBatch.Draw(_currentTexture,_position, Color.White);
+        _spriteBatch.Draw(_playerTexture,
+            _playerPosition, null, Color.White, 
+            _playerRotation, _playerOrigin, 1.0f, 
+            SpriteEffects.None, 0f);
 
         _spriteBatch.End();
-        // TODO: Add your drawing code here
 
         base.Draw(gameTime);
     }
