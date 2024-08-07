@@ -40,16 +40,16 @@ public class Rock
         switch(side)
         {
             case 1: //top
-                this.Position = new Vector2(random.Next(1920),0);    
+                this.Position = new Vector2(random.Next(2000),0);    
                 break;
             case 2: //right
-                this.Position = new Vector2(1920,random.Next(1080));
+                this.Position = new Vector2(1920,random.Next(1200));
                 break;
             case 3: //bottom
-                this.Position = new Vector2(random.Next(1920),1080);
+                this.Position = new Vector2(random.Next(2000),2000);
                 break;
             case 4: //left
-                this.Position = new Vector2(0,random.Next(1080));
+                this.Position = new Vector2(0,random.Next(1200));
                 break;
             default:
                 this.Position = new Vector2(0,0);

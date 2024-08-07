@@ -17,13 +17,16 @@ public class Game1 : Game
     private Texture2D _bulletTexture;
     private float _bulletSpeed;
     private float _shootCD;
+    private float _rockCD;
+    private float _lastWave;
     private float _lastShoot;
     private Player player;
-    private Rock rock;
     private Vector2 _mousePosition;
     public GameTime gameTime;
     private List<Bullet> _bullets = new List<Bullet>();
     private List<Rock> _rocks = new List<Rock>();
+
+    
 
     public Game1()
     {
@@ -40,6 +43,7 @@ public class Game1 : Game
         _graphics.ApplyChanges();
         _bulletSpeed = 8.0f;
         _shootCD = 0.2f; //in seconds
+        _rockCD = 45f;
 
         base.Initialize();
 
@@ -63,9 +67,13 @@ public class Game1 : Game
 
         //rock
         Texture2D rTexture = Content.Load<Texture2D>("largeRock");
-        rock = new Rock(player.Position, "large", rTexture);
-        rock.Origin = new Vector2(rock.Texture.Width / 2f, rock.Texture.Height / 2f);
-        _rocks.Add(rock);
+        for(int i = 0; i < 10; i++)
+        {
+            Rock rock = new Rock(player.Position, "large", rTexture);
+            rock.Origin = new Vector2(rock.Texture.Width / 2f, rock.Texture.Height / 2f);
+            _rocks.Add(rock);
+        }
+        
     
     }
 
@@ -82,8 +90,17 @@ public class Game1 : Game
         UpdateShoot(gameTime);
         UpdateBullets();
         UpdateRocks();
-        rock.Rotate(0.5f);
-        
+        for(int i = 0; i <= _rocks.Count - 1;i++)
+        {
+            if(i%2 == 0)
+            {
+                _rocks[i].Rotate(0.5f);
+            }
+            else
+            {
+                _rocks[i].Rotate(-0.5f);
+            }
+        }
 
         base.Update(gameTime);
     }
@@ -189,6 +206,11 @@ public class Game1 : Game
         }
     }
 
+    private void UpdateWave()
+    {
+        
+    }
+
     protected override void Draw(GameTime gameTime)
     {
         GraphicsDevice.Clear(Color.Black);
@@ -205,9 +227,12 @@ public class Game1 : Game
             _spriteBatch.Draw(_bulletTexture, bullet.Location, Color.White);
         }
 
-        _spriteBatch.Draw(rock.Texture,rock.Position, null, Color.White,
+        foreach(Rock rock in _rocks)
+        {
+            _spriteBatch.Draw(rock.Texture,rock.Position, null, Color.White,
                             rock.Rotation,rock.Origin,
                             1.0f,SpriteEffects.None,0f);
+        }
 
         _spriteBatch.End();
 
