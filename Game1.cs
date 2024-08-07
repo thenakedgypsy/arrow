@@ -1,8 +1,12 @@
-﻿using System.Runtime.CompilerServices;
+﻿using System;
+using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
-using System;
+
+
+
 
 
 namespace mono;
@@ -13,12 +17,20 @@ public class Game1 : Game
     private SpriteBatch _spriteBatch;
     private MouseState _mouseState;
     private Texture2D _playerTexture;
+    private Texture2D _bulletTexture;
+    private float _bulletSpeed;
+    private float _shootCD;
+    private float _lastShoot;
     private float _playerRotation;
     private Vector2 _playerMoveDirection;
     private float _playerSpeed;
     private Vector2 _playerOrigin;
     private Vector2 _playerPosition;
     private Vector2 _mousePosition;
+    public GameTime gameTime;
+
+    private List<Bullet> _bullets = new List<Bullet>();
+    
 
 
     public Game1()
@@ -34,6 +46,8 @@ public class Game1 : Game
 
         base.Initialize();
         _playerSpeed = 2.0f;
+        _bulletSpeed = 12.0f;
+        _shootCD = 0.5f; //in seconds
     }
 
     protected override void LoadContent()
@@ -42,8 +56,10 @@ public class Game1 : Game
         _mousePosition = new Vector2(_mouseState.X,_mouseState.Y);
         _spriteBatch = new SpriteBatch(GraphicsDevice);
         _playerTexture = Content.Load<Texture2D>("tri");
+        _bulletTexture = Content.Load<Texture2D>("bull");
         _playerPosition = new Vector2(100,100);
         _playerOrigin = new Vector2(_playerTexture.Width / 2f, _playerTexture.Height / 2f);
+        _lastShoot = 0f;
 
         // TODO: use this.Content to load your game content here
     }
@@ -59,6 +75,11 @@ public class Game1 : Game
         UpdateMouse();
         UpdateRotation();
         UpdateMovement();
+        if(Keyboard.GetState().IsKeyDown(Keys.Space))
+        {            
+            Shoot(gameTime);
+        }
+        UpdateBullets();
 
         base.Update(gameTime);
     }
@@ -121,10 +142,30 @@ public class Game1 : Game
         _playerRotation = (float)Math.Atan2(_playerMoveDirection.Y, _playerMoveDirection.X);
     }
 
-    public void UpdateMouse()
+    private void Shoot(GameTime gameTime)
+    {
+        float currentTime = (float)gameTime.TotalGameTime.TotalSeconds;
+        if(currentTime - _lastShoot >= _shootCD)
+        {
+        Bullet bullet = new Bullet(_playerMoveDirection, _playerPosition);
+        _bullets.Add(bullet);
+        _lastShoot = currentTime;
+        }
+    }
+
+    private void UpdateMouse()
     {
         _mouseState = Mouse.GetState();
         _mousePosition = new Vector2(_mouseState.X,_mouseState.Y);
+    }
+
+    private void UpdateBullets()
+    {
+        foreach(Bullet bullet in _bullets)
+        {
+            Vector2 nDirection = Vector2.Normalize(bullet.Direction);
+            bullet.Location = bullet.Location + nDirection * _bulletSpeed;
+        }
     }
 
     protected override void Draw(GameTime gameTime)
@@ -137,6 +178,11 @@ public class Game1 : Game
             _playerPosition, null, Color.White, 
             _playerRotation, _playerOrigin, 1.0f, 
             SpriteEffects.None, 0f);
+
+        foreach(Bullet bullet in _bullets)
+        {
+            _spriteBatch.Draw(_bulletTexture, bullet.Location, Color.White);
+        }
 
         _spriteBatch.End();
 
