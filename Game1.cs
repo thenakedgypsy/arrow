@@ -93,6 +93,7 @@ public class Game1 : Game
         UpdateShoot(gameTime);
         UpdateBullets();
         UpdateRocks();
+        CheckRocks();
 
         BulletCheck();
 
@@ -173,7 +174,7 @@ public class Game1 : Game
         {
             foreach(Rock rock in rocksCopy)
             {   
-                Console.WriteLine(_collisionManager.CollideCheck(_bulletTexture,bullet.Location,rock.Texture,rock.Position));
+                //Console.WriteLine(_collisionManager.CollideCheck(_bulletTexture,bullet.Location,rock.Texture,rock.Position));
                 
                 if(_collisionManager.CollideCheck(_bulletTexture,bullet.Location,rock.Texture,rock.Position))
                 {
@@ -183,6 +184,26 @@ public class Game1 : Game
             }
         }
     }
+
+    private void CheckRocks() //check rock collisions with each other 
+{
+	List<Rock> rocksCopy = _rocks.ToList();
+	foreach(Rock rock1 in rocksCopy)
+	{
+		foreach(Rock rock2 in rocksCopy)
+		{
+			if(rock1 == rock2)
+			{
+				continue;	
+			}
+				if(_collisionManager.CollideCheck(rock1.Texture,rock1.Position, 
+                                    rock2.Texture, rock2.Position))
+			    {
+				_collisionManager.RockCollide(rock1,rock2);
+			    }
+		}
+	}
+}
 
 
     private void UpdateMouse()

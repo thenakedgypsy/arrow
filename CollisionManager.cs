@@ -38,6 +38,14 @@ public class CollisionManager
         return true;    
     }
 
+public void RockCollide(Rock rock1, Rock rock2)
+{
+	Vector2 midpoint = rock1.Position - rock2.Position;
+	Vector2 nMidpoint = Vector2.Normalize(midpoint);
+	
+	rock1.Direction = Vector2.Reflect(rock1.Direction, nMidpoint);
+	rock2.Direction = Vector2.Reflect(rock2.Direction, -nMidpoint);
+}    
 
 
 
