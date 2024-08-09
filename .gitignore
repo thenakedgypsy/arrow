@@ -4,3 +4,9 @@ obj/
 Obj/
 bin/
 Bin/
+UpgradeLog.htm
+UpgradeLog2.htm
+*.htm
+*.Identifier
+.vs/
+Properties/
