@@ -19,6 +19,7 @@ public class Game1 : Game
     private Texture2D _smallRockTexture;
     private Texture2D _largeRockTexture;
     private Texture2D _debrisTexture;
+    private Texture2D _shipDebrisTexture;
     private float _bulletSpeed;
     private float _shootCD;
     private float _waveCD;
@@ -32,6 +33,7 @@ public class Game1 : Game
     private List<Rock> _rocks = new List<Rock>();
     private List<Debris> _debris = new List<Debris>();
     public GameTime gameTime;
+    private int _score;
     
 
     public Game1()
@@ -43,17 +45,20 @@ public class Game1 : Game
 
     protected override void Initialize()
     {
-
         _graphics.PreferredBackBufferWidth = 1920;
         _graphics.PreferredBackBufferHeight = 1080;
         _graphics.ApplyChanges();
         _collisionManager = new CollisionManager();
+        
         _bulletSpeed = 8.0f;
         _shootCD = 0.4f; //in seconds
+        _lastShoot = 0f;
+        
         _waveCD = 15f; //in seconds
         _lastWave = -15f;
-        _waveNumber = 8;
-
+        _waveNumber = 20;
+       
+        _score = 0;
 
         base.Initialize();
 
@@ -72,7 +77,7 @@ public class Game1 : Game
         player.Origin = new Vector2(player.Texture.Width / 1.5f, player.Texture.Height / 2f);
 
         _bulletTexture = Content.Load<Texture2D>("bull");
-        _lastShoot = 0f;
+        
 
         _midRockTexture = Content.Load<Texture2D>("midRock");
         
@@ -82,16 +87,7 @@ public class Game1 : Game
 
         _debrisTexture = Content.Load<Texture2D>("debris");
 
-        if (_debrisTexture == null)
-        {
-            Console.WriteLine("Debris texture failed to load.");
-        }
-        else
-        {
-            Console.WriteLine("Debris texture loaded successfully.");
-        }
-        
-    
+        _shipDebrisTexture = Content.Load<Texture2D>("debris2");
     }
 
     protected override void Update(GameTime gameTime)
@@ -100,7 +96,7 @@ public class Game1 : Game
         {
             Exit();
         }
-        
+        CheckPlayer();
         UpdateMouse();
         player.UpdateRotation(_mousePosition);
         UpdateMovement();
@@ -109,8 +105,9 @@ public class Game1 : Game
         UpdateRocks();
         CheckRocks();
         UpdateWave(gameTime);
-        BulletCheck();
+        CheckBullets();
         UpdateDebris();
+        
 
         base.Update(gameTime);
     }
@@ -187,7 +184,8 @@ public class Game1 : Game
 
     private void UpdateShoot(GameTime gameTime)
     {
-        if(Keyboard.GetState().IsKeyDown(Keys.Space))
+        
+        if(Keyboard.GetState().IsKeyDown(Keys.Space) && player.Alive)
         {
             float currentTime = (float)gameTime.TotalGameTime.TotalSeconds;
             if(currentTime - _lastShoot >= _shootCD)
@@ -199,7 +197,7 @@ public class Game1 : Game
         }        
     }
 
-    private void BulletCheck()
+    private void CheckBullets()
     {
         List<Bullet> bulletsCopy = _bullets.ToList();
         List<Rock> rocksCopy = _rocks.ToList();
@@ -221,6 +219,8 @@ public class Game1 : Game
                     {
                         _debris.Add(debris);
                     }
+                    _score += 1;
+                    Console.WriteLine($"Score = {_score}");
                     _rocks.Remove(rock);
                     _bullets.Remove(bullet);
                     
@@ -230,25 +230,45 @@ public class Game1 : Game
     }
 
     private void CheckRocks() //check rock collisions with each other 
-{
-	List<Rock> rocksCopy = _rocks.ToList();
-	foreach(Rock rock1 in rocksCopy)
-	{
-		foreach(Rock rock2 in rocksCopy)
-		{
-			if(rock1 == rock2)
-			{
-				continue;	
-			}
-				if(_collisionManager.CollideCheck(rock1.Texture,rock1.Position, 
-                                    rock2.Texture, rock2.Position))
-			    {
-				_collisionManager.RockCollide(rock1,rock2);
-			    }
-		}
-	}
-}
+    {
+	    List<Rock> rocksCopy = _rocks.ToList();
+	    foreach(Rock rock1 in rocksCopy)
+	    {
+	    	foreach(Rock rock2 in rocksCopy)
+	    	{
+	    		if(rock1 == rock2)
+	    		{
+	    			continue;	
+	    		}
+	    			if(_collisionManager.CollideCheck(rock1.Texture,rock1.Position, 
+                                        rock2.Texture, rock2.Position))
+	    		    {
+	    			_collisionManager.RockCollide(rock1,rock2);
+	    		    }
+	    	}
+	    }
+    }
 
+    private void CheckPlayer()
+    {
+        if(player.Alive)
+        {
+            List<Rock> rocksCopy = _rocks.ToList();
+            foreach(Rock rock in rocksCopy)
+            {
+                if(_collisionManager.CollideCheck(player.Texture, player.Position, rock.Texture, rock.Position))
+                {
+                    player.Alive = false;
+                    List<Debris> newDebris = player.Explode(_shipDebrisTexture);
+                    foreach(Debris debris in newDebris)
+                    {
+                        _debris.Add(debris);
+                    }
+                }
+            }
+        }
+
+    }
 
     private void UpdateMouse()
     {
@@ -322,17 +342,19 @@ public class Game1 : Game
         }
     }
 
-
     protected override void Draw(GameTime gameTime)
     {
         GraphicsDevice.Clear(Color.Black);
 
         _spriteBatch.Begin();
 
+        if(player.Alive)
+        {
         _spriteBatch.Draw(player.Texture,
                         player.Position, null, Color.White, 
                         player.Rotation, player.Origin, 1.0f, 
                         SpriteEffects.None, 0f);
+        }
 
         foreach(Bullet bullet in _bullets)
         {
