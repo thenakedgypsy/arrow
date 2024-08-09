@@ -15,16 +15,22 @@ public class Game1 : Game
     private SpriteBatch _spriteBatch;
     private MouseState _mouseState;
     private Texture2D _bulletTexture;
+    private Texture2D _midRockTexture;
+    private Texture2D _smallRockTexture;
+    private Texture2D _largeRockTexture;
+    private Texture2D _debrisTexture;
     private float _bulletSpeed;
     private float _shootCD;
-    private float _rockCD;
+    private float _waveCD;
     private float _lastWave;
+    private int _waveNumber;
     private float _lastShoot;
     private Player player;
     private Vector2 _mousePosition;
     private CollisionManager _collisionManager;
     private List<Bullet> _bullets = new List<Bullet>();
     private List<Rock> _rocks = new List<Rock>();
+    private List<Debris> _debris = new List<Debris>();
     public GameTime gameTime;
     
 
@@ -43,8 +49,11 @@ public class Game1 : Game
         _graphics.ApplyChanges();
         _collisionManager = new CollisionManager();
         _bulletSpeed = 8.0f;
-        _shootCD = 0.2f; //in seconds
-        _rockCD = 45f;
+        _shootCD = 0.4f; //in seconds
+        _waveCD = 15f; //in seconds
+        _lastWave = -15f;
+        _waveNumber = 8;
+
 
         base.Initialize();
 
@@ -64,17 +73,22 @@ public class Game1 : Game
 
         _bulletTexture = Content.Load<Texture2D>("bull");
         _lastShoot = 0f;
-       
+
+        _midRockTexture = Content.Load<Texture2D>("midRock");
         
+        _smallRockTexture = Content.Load<Texture2D>("smallRock");
+       
+        _largeRockTexture = Content.Load<Texture2D>("largeRock");
 
+        _debrisTexture = Content.Load<Texture2D>("debris");
 
-        //rock
-        Texture2D rTexture = Content.Load<Texture2D>("largeRock");
-        for(int i = 0; i < 10; i++)
+        if (_debrisTexture == null)
         {
-            Rock rock = new Rock(player.Position, "large", rTexture);
-            rock.Origin = new Vector2(rock.Texture.Width / 2f, rock.Texture.Height / 2f);
-            _rocks.Add(rock);
+            Console.WriteLine("Debris texture failed to load.");
+        }
+        else
+        {
+            Console.WriteLine("Debris texture loaded successfully.");
         }
         
     
@@ -94,11 +108,30 @@ public class Game1 : Game
         UpdateBullets();
         UpdateRocks();
         CheckRocks();
-
+        UpdateWave(gameTime);
         BulletCheck();
+        UpdateDebris();
 
         base.Update(gameTime);
     }
+
+    private void UpdateWave(GameTime gameTime)
+{    
+    float currentTime = (float)gameTime.TotalGameTime.TotalSeconds; 
+    if(currentTime - _lastWave >= _waveCD) //if CD has passed
+    {
+        _waveNumber++; //need a property in game.cs for this and _waveCD
+        _lastWave = currentTime;
+        while(_rocks.Count < _waveNumber)
+        {
+            Rock rock = new Rock(player.Position,"large");
+            rock.Texture = _largeRockTexture;
+            rock.Origin = new Vector2(rock.Texture.Width / 2f, rock.Texture.Height / 2f);
+            _rocks.Add(rock);
+        }
+        
+    }
+}
 
     private void UpdateMovement()
     {
@@ -170,16 +203,27 @@ public class Game1 : Game
     {
         List<Bullet> bulletsCopy = _bullets.ToList();
         List<Rock> rocksCopy = _rocks.ToList();
+        List<Debris> newDebris = new List<Debris>();
         foreach(Bullet bullet in bulletsCopy)
         {
             foreach(Rock rock in rocksCopy)
-            {   
-                //Console.WriteLine(_collisionManager.CollideCheck(_bulletTexture,bullet.Location,rock.Texture,rock.Position));
-                
+            {                   
                 if(_collisionManager.CollideCheck(_bulletTexture,bullet.Location,rock.Texture,rock.Position))
                 {
+                    if(rock.Size == "large" || rock.Size == "mid")
+                    {
+                        List<Rock> tRocks = rock.Fragment();
+                        _rocks.Add(tRocks[0]);
+                        _rocks.Add(tRocks[1]);
+                    }
+                    newDebris = rock.Explode(_debrisTexture);
+                    foreach(Debris debris in newDebris)
+                    {
+                        _debris.Add(debris);
+                    }
                     _rocks.Remove(rock);
                     _bullets.Remove(bullet);
+                    
                 }
             }
         }
@@ -229,6 +273,24 @@ public class Game1 : Game
             }
         } 
     }
+    
+    private void UpdateDebris()
+    {
+        List<Debris> debrisCopy = _debris.ToList();
+        foreach(Debris debris in debrisCopy)
+        {
+            Vector2 nDirection = Vector2.Normalize(debris.Direction);
+            debris.Position += nDirection * (_bulletSpeed / 2);
+            if(debris.Position.Y < -10 || debris.Position.Y > 1080)
+            {
+                _debris.Remove(debris);
+            }
+            else if(debris.Position.X < -10 || debris.Position.X > 1920)
+            {
+                _debris.Remove(debris);
+            }
+        }
+    }
 
     private void UpdateRocks()
     {
@@ -238,6 +300,14 @@ public class Game1 : Game
             
             Vector2 nDirection = Vector2.Normalize(rock.Direction);
             rock.Position = rock.Position - nDirection * rock.Speed;
+            if(rock.Position.Y < -100 || rock.Position.Y > 1180)
+            {
+            _rocks.Remove(rock);
+            }
+            else if(rock.Position.X < -100 || rock.Position.X > 2020)
+            {
+            _rocks.Remove(rock);
+            }
         }
         for(int i = 0; i <= _rocks.Count - 1;i++)
         {
@@ -252,10 +322,6 @@ public class Game1 : Game
         }
     }
 
-    private void UpdateWave()
-    {
-
-    }
 
     protected override void Draw(GameTime gameTime)
     {
@@ -275,9 +341,23 @@ public class Game1 : Game
 
         foreach(Rock rock in _rocks)
         {
+            if(rock.Size == "mid")
+            {
+                rock.Texture = _midRockTexture;
+            }
+            if(rock.Size == "small")
+            {
+                rock.Texture = _smallRockTexture;
+            }
             _spriteBatch.Draw(rock.Texture,rock.Position, null, Color.White,
                             rock.Rotation,rock.Origin,
                             1.0f,SpriteEffects.None,0f);
+        }
+
+        foreach(Debris debris in _debris)
+        {
+
+            _spriteBatch.Draw(debris.Texture, debris.Position, null, Color.White);
         }
 
         _spriteBatch.End();

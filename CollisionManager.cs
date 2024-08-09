@@ -45,6 +45,17 @@ public void RockCollide(Rock rock1, Rock rock2)
 	
 	rock1.Direction = Vector2.Reflect(rock1.Direction, nMidpoint);
 	rock2.Direction = Vector2.Reflect(rock2.Direction, -nMidpoint);
+
+    //stuck together prevention:
+    float totalSize = (rock1.GetSize() + rock2.GetSize()) / 2f;
+    float overlap = totalSize - midpoint.Length();
+
+    if (overlap > 0)
+    {
+        Vector2 separation = nMidpoint * overlap / 2.0f;
+        rock1.Position += separation;
+        rock2.Position -= separation;
+    }
 }    
 
 
