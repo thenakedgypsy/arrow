@@ -4,8 +4,10 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework.Audio;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
+using Microsoft.Xna.Framework.Media;
 
 namespace mono;
 
@@ -20,6 +22,10 @@ public class Game1 : Game
     private Texture2D _largeRockTexture;
     private Texture2D _debrisTexture;
     private Texture2D _shipDebrisTexture;
+    private SoundEffect _explodeSound;
+    private SoundEffect _destroySound;
+    private SoundEffect _laserSound;
+    private Song _theme;
     private float _bulletSpeed;
     private float _shootCD;
     private float _waveCD;
@@ -88,6 +94,17 @@ public class Game1 : Game
         _debrisTexture = Content.Load<Texture2D>("debris");
 
         _shipDebrisTexture = Content.Load<Texture2D>("debris2");
+
+        _destroySound = Content.Load<SoundEffect>("destroy");
+
+        _explodeSound = Content.Load<SoundEffect>("explode");
+
+        _laserSound = Content.Load<SoundEffect>("pew");
+        
+        _theme = Content.Load<Song>("music");
+        MediaPlayer.Play(_theme);
+
+        
     }
 
     protected override void Update(GameTime gameTime)
@@ -114,19 +131,22 @@ public class Game1 : Game
 
     private void UpdateWave(GameTime gameTime)
 {    
-    float currentTime = (float)gameTime.TotalGameTime.TotalSeconds; 
-    if(currentTime - _lastWave >= _waveCD) //if CD has passed
+    if(player.Alive)
     {
-        _waveNumber++; //need a property in game.cs for this and _waveCD
-        _lastWave = currentTime;
-        while(_rocks.Count < _waveNumber)
+        float currentTime = (float)gameTime.TotalGameTime.TotalSeconds; 
+        if(currentTime - _lastWave >= _waveCD) //if CD has passed
         {
-            Rock rock = new Rock(player.Position,"large");
-            rock.Texture = _largeRockTexture;
-            rock.Origin = new Vector2(rock.Texture.Width / 2f, rock.Texture.Height / 2f);
-            _rocks.Add(rock);
+            _waveNumber++; //need a property in game.cs for this and _waveCD
+            _lastWave = currentTime;
+            while(_rocks.Count < _waveNumber)
+            {
+                Rock rock = new Rock(player.Position,"large");
+                rock.Texture = _largeRockTexture;
+                rock.Origin = new Vector2(rock.Texture.Width / 2f, rock.Texture.Height / 2f);
+                _rocks.Add(rock);
+            }
+            
         }
-        
     }
 }
 
@@ -193,6 +213,7 @@ public class Game1 : Game
             Bullet bullet = new Bullet(player.MoveDirection, player.Position);
             _bullets.Add(bullet);
             _lastShoot = currentTime;
+            _laserSound.Play();
             }
         }        
     }
@@ -223,6 +244,7 @@ public class Game1 : Game
                     Console.WriteLine($"Score = {_score}");
                     _rocks.Remove(rock);
                     _bullets.Remove(bullet);
+                    _destroySound.Play();
                     
                 }
             }
@@ -259,6 +281,7 @@ public class Game1 : Game
                 if(_collisionManager.CollideCheck(player.Texture, player.Position, rock.Texture, rock.Position))
                 {
                     player.Alive = false;
+                    _explodeSound.Play();
                     List<Debris> newDebris = player.Explode(_shipDebrisTexture);
                     foreach(Debris debris in newDebris)
                     {
