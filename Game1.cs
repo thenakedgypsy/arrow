@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
@@ -32,6 +33,7 @@ public class Game1 : Game
     private float _lastWave;
     private int _waveNumber;
     private float _lastShoot;
+    private SpriteFont font;
     private Player player;
     private Vector2 _mousePosition;
     private CollisionManager _collisionManager;
@@ -40,6 +42,7 @@ public class Game1 : Game
     private List<Debris> _debris = new List<Debris>();
     public GameTime gameTime;
     private int _score;
+    private Vector2 goPosition;
     
 
     public Game1()
@@ -65,6 +68,8 @@ public class Game1 : Game
         _waveNumber = 20;
        
         _score = 0;
+
+        goPosition = new Vector2(880,0);
 
         base.Initialize();
 
@@ -100,6 +105,8 @@ public class Game1 : Game
         _explodeSound = Content.Load<SoundEffect>("explode");
 
         _laserSound = Content.Load<SoundEffect>("pew");
+
+        font = Content.Load<SpriteFont>("KarenFat");
         
         _theme = Content.Load<Song>("music");
         MediaPlayer.Play(_theme);
@@ -240,8 +247,7 @@ public class Game1 : Game
                     {
                         _debris.Add(debris);
                     }
-                    _score += 1;
-                    Console.WriteLine($"Score = {_score}");
+                    _score += rock.Score;
                     _rocks.Remove(rock);
                     _bullets.Remove(bullet);
                     _destroySound.Play();
@@ -290,7 +296,6 @@ public class Game1 : Game
                 }
             }
         }
-
     }
 
     private void UpdateMouse()
@@ -365,6 +370,14 @@ public class Game1 : Game
         }
     }
 
+    private void UpdateGameOver()
+    {
+        if(goPosition.Y < 540)
+        {
+            goPosition.Y = goPosition.Y + 0.5f * _bulletSpeed;
+        }
+    }
+
     protected override void Draw(GameTime gameTime)
     {
         GraphicsDevice.Clear(Color.Black);
@@ -389,10 +402,12 @@ public class Game1 : Game
             if(rock.Size == "mid")
             {
                 rock.Texture = _midRockTexture;
+                rock.Score = 2;
             }
             if(rock.Size == "small")
             {
                 rock.Texture = _smallRockTexture;
+                rock.Score = 3;
             }
             _spriteBatch.Draw(rock.Texture,rock.Position, null, Color.White,
                             rock.Rotation,rock.Origin,
@@ -405,6 +420,13 @@ public class Game1 : Game
             _spriteBatch.Draw(debris.Texture, debris.Position, null, Color.White);
         }
 
+        _spriteBatch.DrawString(font, $"SCORE: {_score}", new Vector2(1720, 50), Color.White);
+
+        if(!player.Alive)
+        {
+        _spriteBatch.DrawString(font, $"GAME OVER", goPosition, Color.White);
+        UpdateGameOver();
+        }
         _spriteBatch.End();
 
         base.Draw(gameTime);

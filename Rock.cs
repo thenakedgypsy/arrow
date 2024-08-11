@@ -14,12 +14,14 @@ public class Rock
     public float Rotation;
     public Vector2 Origin;
     public float Speed;
+    public int Score;
 
 
     public Rock(Vector2 playerPos, string size)
     {
         if(size == "large")
         {
+            Score = 1;
             Spawn();
         }
         this.Direction = this.Position - playerPos;
@@ -28,6 +30,7 @@ public class Rock
         int degrees = random.Next(0,361);
         Rotation = degrees * (float)Math.PI / 180.0f; //convert to radians
         Speed = (float)random.Next(1,4);
+        
         
     }
 
